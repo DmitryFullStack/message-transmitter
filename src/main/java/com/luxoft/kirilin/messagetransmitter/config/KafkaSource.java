@@ -1,16 +1,18 @@
-package com.luxoft.kirilin.kafkatransmitter.config;
+package com.luxoft.kirilin.messagetransmitter.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.errors.WakeupException;
 import org.springframework.lang.Nullable;
 
+
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -21,7 +23,7 @@ import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
 @Slf4j
-public class KafkaSource<K, V> {
+public class KafkaSource<K, V> implements RecordSource<V> {
 
     private final AtomicBoolean closed = new AtomicBoolean(false);
     private final KafkaSourceConfigHolder sourceConfigHolder;
@@ -37,46 +39,50 @@ public class KafkaSource<K, V> {
                 sourceConfigHolder.getSourceTopic(), this.objectMapper);
     }
 
+    @Override
     public TransmitterStreamBuilder<V> pipeline() {
         return new TransmitterStreamBuilder<>(this, new ArrayList<>());
     }
 
-    @SneakyThrows
+    @Override
     public void process(Consumer cons, List<Object> actions) {
-        log.info("Kafka consumer starting...");
-        final Consumer pipelineConsumer = record -> {
-            Object result = record;
-            for (Object pipelineAction : actions) {
-                result = pipe(result, pipelineAction);
-                if (isNull(result)) {
-                    break;
+        ExecutorService executorService = Executors.newSingleThreadExecutor();
+        executorService.submit(() -> {
+            log.info("Kafka consumer starting...");
+            final Consumer pipelineConsumer = record -> {
+                Object result = record;
+                for (Object pipelineAction : actions) {
+                    result = pipe(result, pipelineAction);
+                    if (isNull(result)) {
+                        break;
+                    }
                 }
+                if (nonNull(result)) {
+                    cons.accept(result);
+                }
+            };
+            try {
+                while (!closed.get()) {
+                    StreamSupport.stream(kafkaConsumer.poll(Duration.ofSeconds(1L)).spliterator(), false)
+                            .map(ConsumerRecord::value)
+                            .forEach(pipelineConsumer);
+                }
+            } catch (WakeupException e) {
+                if (!closed.get()) throw e;
+            } catch (Exception e) {
+                log.error(e.getMessage(), e);
+            } finally {
+                kafkaConsumer.close();
             }
-            if (nonNull(result)) {
-                cons.accept(result);
-            }
-        };
-        try {
-            while (!closed.get()) {
-                StreamSupport.stream(kafkaConsumer.poll(Duration.ofSeconds(1L)).spliterator(), false)
-                        .map(ConsumerRecord::value)
-                        .forEach(pipelineConsumer);
-            }
-        } catch (WakeupException e) {
-            if (!closed.get()) throw e;
-        } catch (Exception e) {
-            log.error(e.getMessage(), e);
-        } finally {
-            kafkaConsumer.close();
-        }
+        });
     }
 
     @Nullable
     private Object pipe(Object result, Object pipelineAction) {
-        if(pipelineAction instanceof Function){
+        if (pipelineAction instanceof Function) {
             return ((Function) pipelineAction).apply(result);
         }
-        if(pipelineAction instanceof Predicate){
+        if (pipelineAction instanceof Predicate) {
             if (((Predicate) pipelineAction).test(result)) {
                 return result;
             }

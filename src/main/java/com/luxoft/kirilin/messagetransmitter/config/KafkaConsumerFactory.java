@@ -1,4 +1,4 @@
-package com.luxoft.kirilin.kafkatransmitter.config;
+package com.luxoft.kirilin.messagetransmitter.config;
 
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.Deserializer;

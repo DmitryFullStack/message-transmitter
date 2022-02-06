@@ -1,4 +1,4 @@
-package com.luxoft.kirilin.kafkatransmitter;
+package com.luxoft.kirilin.messagetransmitter;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;

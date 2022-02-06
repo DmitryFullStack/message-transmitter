@@ -1,4 +1,4 @@
-package com.luxoft.kirilin.kafkatransmitter.config;
+package com.luxoft.kirilin.messagetransmitter.config;
 
 import java.util.Collection;
 import java.util.function.Function;

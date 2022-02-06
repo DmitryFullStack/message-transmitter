@@ -1,0 +1,8 @@
+transmitter:
+  broker:
+    consumer:
+      bootstrap-servers: localhost:9092
+      ssl:
+        protocol: PLAINTEXT
+      group-id: test-group
+  source-topic: test

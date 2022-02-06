@@ -1,16 +1,9 @@
-package com.luxoft.kirilin.kafkatransmitter.config;
+package com.luxoft.kirilin.messagetransmitter.config;
 
-import lombok.SneakyThrows;
-import net.jodah.typetools.TypeResolver;
-
-import java.lang.reflect.ParameterizedType;
 import java.util.*;
-import java.util.function.BinaryOperator;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
-
-import static java.util.Objects.isNull;
 
 
 public class TransmitterStreamBuilder<T> {
@@ -24,7 +17,6 @@ public class TransmitterStreamBuilder<T> {
         this.actions = actions;
     }
 
-    @SneakyThrows
     public void forEach(Consumer<T> cons) {
         kafkaSource.process(cons, actions);
     }
@@ -34,10 +26,17 @@ public class TransmitterStreamBuilder<T> {
         return new TransmitterStreamBuilder<>(kafkaSource, actions);
     }
 
+    public TransmitterStreamBuilder<T> forEachAndThen(Consumer<T> consumer) {
+        actions.add(consumer);
+        return new TransmitterStreamBuilder<>(kafkaSource, actions);
+    }
 
     public TransmitterStreamBuilder<T> filter(Predicate<T> pred) {
         actions.add(pred);
         return new TransmitterStreamBuilder<>(kafkaSource, actions);
     }
 
+    public void to(Consumer<T> cons) {
+        kafkaSource.process(cons, actions);
+    }
 }

@@ -1,17 +1,14 @@
-package com.luxoft.kirilin.kafkatransmitter.config;
+package com.luxoft.kirilin.messagetransmitter.config;
 
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.common.serialization.StringDeserializer;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-
-import java.util.List;
 
 @Configuration
 @EnableConfigurationProperties(KafkaSourceConfigHolder.class)
@@ -27,6 +24,13 @@ public class KafkaTransmitterConfig {
         mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
         mapper.registerModule(new JavaTimeModule());
         return mapper;
+    }
+
+    @Bean
+    @ConditionalOnProperty(name = "transmitter.broker.consumer.bootstrap-servers")
+    public KafkaSource<String, Person> kafkaSource() {
+        return new KafkaSource<>(sourceConfigHolder, objectMapper(),
+                String.class, Person.class);
     }
 
 //    @Bean

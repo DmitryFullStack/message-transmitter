@@ -1,3 +1,3 @@
-# kafka-transmitter
+# message-transmitter
 
-Different Kafka messaging automation app
+Different messaging  automation app
