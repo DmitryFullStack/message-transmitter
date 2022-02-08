@@ -6,10 +6,11 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.errors.WakeupException;
 import org.springframework.lang.Nullable;
-
+import org.springframework.util.CollectionUtils;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -51,15 +52,7 @@ public class KafkaSource<K, V> implements RecordSource<V> {
             log.info("Kafka consumer starting...");
             final Consumer pipelineConsumer = record -> {
                 Object result = record;
-                for (Object pipelineAction : actions) {
-                    result = pipe(result, pipelineAction);
-                    if (isNull(result)) {
-                        break;
-                    }
-                }
-                if (nonNull(result)) {
-                    cons.accept(result);
-                }
+                recordTransporter(cons, actions, result);
             };
             try {
                 while (!closed.get()) {
@@ -77,6 +70,24 @@ public class KafkaSource<K, V> implements RecordSource<V> {
         });
     }
 
+    private void recordTransporter(Consumer cons, List<Object> actions, Object result) {
+        for (Object pipelineAction : actions) {
+            result = pipe(result, pipelineAction);
+            if (isNull(result)) {
+                break;
+            }
+            if (Collection.class.isAssignableFrom(result.getClass())) {
+                for (Object elem : Collection.class.cast(result)) {
+                    recordTransporter(cons, actions.subList(actions.indexOf(pipelineAction) + 1, actions.size()), elem);
+                }
+                break;
+            }
+        }
+        if (nonNull(result)) {
+            cons.accept(result);
+        }
+    }
+
     @Nullable
     private Object pipe(Object result, Object pipelineAction) {
         if (pipelineAction instanceof Function) {
@@ -86,6 +97,10 @@ public class KafkaSource<K, V> implements RecordSource<V> {
             if (((Predicate) pipelineAction).test(result)) {
                 return result;
             }
+        }
+        if (pipelineAction instanceof Consumer) {
+            ((Consumer) pipelineAction).accept(result);
+            return result;
         }
         return null;
     }

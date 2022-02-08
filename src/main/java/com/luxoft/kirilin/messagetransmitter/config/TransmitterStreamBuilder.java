@@ -4,6 +4,7 @@ import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 
 public class TransmitterStreamBuilder<T> {
@@ -21,7 +22,13 @@ public class TransmitterStreamBuilder<T> {
         kafkaSource.process(cons, actions);
     }
 
+
     public <U> TransmitterStreamBuilder<U> map(Function<T, U> mapper) {
+        actions.add(mapper);
+        return new TransmitterStreamBuilder<>(kafkaSource, actions);
+    }
+
+        public <U> TransmitterStreamBuilder<U> flatMap(Function<? super T, ? extends Collection<? extends U>> mapper) {
         actions.add(mapper);
         return new TransmitterStreamBuilder<>(kafkaSource, actions);
     }
