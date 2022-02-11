@@ -1,4 +1,4 @@
-package com.luxoft.kirilin.messagetransmitter.config;
+package com.luxoft.kirilin.messagetransmitter.test;
 
 import lombok.Data;
 
@@ -6,4 +6,5 @@ import lombok.Data;
 public class Person {
     private String firstName;
     private String lastName;
+    private int age;
 }

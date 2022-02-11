@@ -5,4 +5,8 @@ transmitter:
       ssl:
         protocol: PLAINTEXT
       group-id: test-group
+    producer:
+      bootstrap-servers: stalpp-kfc001lk.corp.dev.vtb:9092
+      ssl:
+        protocol: PLAINTEXT
   source-topic: test

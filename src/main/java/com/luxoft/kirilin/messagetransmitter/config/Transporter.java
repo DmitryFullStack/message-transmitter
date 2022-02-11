@@ -1,15 +1,12 @@
 package com.luxoft.kirilin.messagetransmitter.config;
 
-import java.util.Collection;
-import java.util.function.Function;
-import java.util.function.UnaryOperator;
+import java.util.List;
+import java.util.function.Consumer;
 
-public interface Transporter {
+public interface Transporter<T, V> {
+    TransmitterStreamBuilder<T> pipeline();
 
-    <T, R> Transporter map(Function<? super T, ? extends R> func);
+    void forEach(Consumer cons, List<Object> actions);
 
-    <T> Transporter filter(UnaryOperator<T> func);
-
-    <T> Collection<T> to(Transporter source);
-
+    Transporter<T, V> to(List<Object> actions, List<String> topics);
 }

@@ -4,9 +4,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.errors.WakeupException;
 import org.springframework.lang.Nullable;
-import org.springframework.util.CollectionUtils;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -24,29 +25,33 @@ import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
 @Slf4j
-public class KafkaSource<K, V> implements RecordSource<V> {
+public class KafkaSource<T, V> implements Transporter<T, V> {
 
     private final AtomicBoolean closed = new AtomicBoolean(false);
     private final KafkaSourceConfigHolder sourceConfigHolder;
     private final ObjectMapper objectMapper;
-    private final KafkaConsumer<K, V> kafkaConsumer;
+    private final KafkaConsumer<?, T> kafkaConsumer;
+    private final KafkaProducer<?, V> kafkaProducer;
 
     public KafkaSource(KafkaSourceConfigHolder sourceConfigHolder, ObjectMapper objectMapper,
-                       Class<? super K> keyClass, Class<? super V> valueClass) {
+                       Class<? super T> expectedClass, Class<? super V> targetClass) {
         this.sourceConfigHolder = sourceConfigHolder;
         this.objectMapper = objectMapper;
-        this.kafkaConsumer = KafkaConsumerFactory.getConsumer(keyClass, valueClass,
+        this.kafkaProducer = KafkaProducerFactory.getProducer(targetClass,
+                this.sourceConfigHolder.getBroker().buildProducerProperties(),
+                this.objectMapper);
+        this.kafkaConsumer = KafkaConsumerFactory.getConsumer(expectedClass,
                 this.sourceConfigHolder.getBroker().buildConsumerProperties(),
                 sourceConfigHolder.getSourceTopic(), this.objectMapper);
     }
 
     @Override
-    public TransmitterStreamBuilder<V> pipeline() {
+    public TransmitterStreamBuilder<T> pipeline() {
         return new TransmitterStreamBuilder<>(this, new ArrayList<>());
     }
 
     @Override
-    public void process(Consumer cons, List<Object> actions) {
+    public void forEach(Consumer cons, List<Object> actions) {
         ExecutorService executorService = Executors.newSingleThreadExecutor();
         executorService.submit(() -> {
             log.info("Kafka consumer starting...");
@@ -68,6 +73,17 @@ public class KafkaSource<K, V> implements RecordSource<V> {
                 kafkaConsumer.close();
             }
         });
+    }
+
+    @Override
+    public Transporter<T, V> to(List<Object> actions, List<String> topics) {
+        Consumer<V> sender = record -> {
+            for (String topic : topics) {
+                kafkaProducer.send(new ProducerRecord<>(topic, record));
+            }
+        };
+        forEach(sender, actions);
+        return this;
     }
 
     private void recordTransporter(Consumer cons, List<Object> actions, Object result) {

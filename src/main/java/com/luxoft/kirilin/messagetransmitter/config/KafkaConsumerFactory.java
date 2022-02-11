@@ -11,24 +11,23 @@ import java.util.Map;
 
 public class KafkaConsumerFactory {
 
-    public static <K, V> KafkaConsumer getConsumer(
-            Class<K> keyClass,
+    public static <V> KafkaConsumer getConsumer(
             Class<V> valueClass,
             Map<String, Object> props,
             String topicName,
             ObjectMapper objectMapper){
-        var keyDeserializer = keyClass.isAssignableFrom(String.class) ? new StringDeserializer() : new JsonDeserializer();
+        var keyDeserializer = new StringDeserializer();
         Deserializer valueDeserializer;
         if (valueClass.isAssignableFrom(String.class)) {
             valueDeserializer = new StringDeserializer();
         }
         else {
-            JsonDeserializer deserializer = new JsonDeserializer<V>(valueClass, objectMapper);
+            JsonDeserializer<V> deserializer = new JsonDeserializer<>(valueClass, objectMapper);
             deserializer.setUseTypeHeaders(false);
             deserializer.addTrustedPackages("*");
             valueDeserializer = deserializer;
         }
-        KafkaConsumer<K, V> kafkaConsumer = new KafkaConsumer<K, V>(props, keyDeserializer, valueDeserializer);
+        KafkaConsumer<String, V> kafkaConsumer = new KafkaConsumer<String, V>(props, keyDeserializer, valueDeserializer);
         kafkaConsumer.subscribe(Collections.singletonList(topicName));
         return kafkaConsumer;
     }

@@ -1,10 +1,11 @@
 package com.luxoft.kirilin.messagetransmitter.config;
 
+import net.jodah.typetools.TypeResolver;
+
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.stream.Stream;
 
 
 public class TransmitterStreamBuilder<T> {
@@ -19,11 +20,12 @@ public class TransmitterStreamBuilder<T> {
     }
 
     public void forEach(Consumer<T> cons) {
-        kafkaSource.process(cons, actions);
+        kafkaSource.forEach(cons, actions);
     }
 
 
     public <U> TransmitterStreamBuilder<U> map(Function<T, U> mapper) {
+        TypeResolver.resolveRawArguments(Function.class, mapper.getClass());
         actions.add(mapper);
         return new TransmitterStreamBuilder<>(kafkaSource, actions);
     }
@@ -43,7 +45,7 @@ public class TransmitterStreamBuilder<T> {
         return new TransmitterStreamBuilder<>(kafkaSource, actions);
     }
 
-    public void to(Consumer<T> cons) {
-        kafkaSource.process(cons, actions);
+    public Transporter send(String ... topics) {
+        return kafkaSource.to(actions, Arrays.asList(topics));
     }
 }
