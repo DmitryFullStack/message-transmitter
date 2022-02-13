@@ -15,7 +15,10 @@ public class TestService {
 
     @EventListener(ContextRefreshedEvent.class)
     public void work(ContextRefreshedEvent event){
-        transporter.pipeline()
+        transporter
+                .mappingExHandler(ex -> System.out.println("MAPPING!!!" + ex.getMessage()))
+                .deserializeExHandler(ex -> System.out.println("DESERIALIZED!!!" + ex.getMessage()))
+                .pipeline()
                 .filter(person -> person.getAge() > 18)
                 .map(person -> new Unit(String.format("%s.%s%d", person.getLastName(),
                         person.getFirstName().toCharArray()[0], person.getAge()),

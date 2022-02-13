@@ -1,29 +1,26 @@
 package com.luxoft.kirilin.messagetransmitter.config;
 
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
-import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.NestedConfigurationProperty;
 
 import java.util.Collections;
 import java.util.List;
 
-@ConfigurationProperties(prefix = "transmitter")
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Builder
-public class KafkaSourceConfigHolder {
+public class TransmitterDescriptor {
 
-    private Boolean enabled = false;
-
-    private List<String> sourceTopic = Collections.emptyList();;
+    private String name;
+    private List<String> sourceTopic = Collections.emptyList();
 
     @NestedConfigurationProperty
-    private KafkaProperties broker;
+    private final KafkaProperties.Consumer consumer = new KafkaProperties.Consumer();
 
-    private List<TransmitterDescriptor> routes;
+    @NestedConfigurationProperty
+    private final KafkaProperties.Producer producer = new KafkaProperties.Producer();
+
 }

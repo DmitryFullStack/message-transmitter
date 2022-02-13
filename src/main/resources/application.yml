@@ -1,12 +1,25 @@
 transmitter:
+  enabled: true
+  source-topic: test
   broker:
     consumer:
       bootstrap-servers: localhost:9092
       ssl:
         protocol: PLAINTEXT
-      group-id: test-group
+      group-id: test-group-dev
     producer:
       bootstrap-servers: stalpp-kfc001lk.corp.dev.vtb:9092
       ssl:
         protocol: PLAINTEXT
-  source-topic: test
+  routes:
+    - source-topic: test
+      consumer:
+        bootstrap-servers: localhost:9092
+        ssl:
+          protocol: PLAINTEXT
+        group-id: test-group
+      producer:
+        bootstrap-servers: stalpp-kfc001lk.corp.dev.vtb:9092
+        ssl:
+          protocol: PLAINTEXT
+

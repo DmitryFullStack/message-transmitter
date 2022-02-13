@@ -25,7 +25,6 @@ public class TransmitterStreamBuilder<T> {
 
 
     public <U> TransmitterStreamBuilder<U> map(Function<T, U> mapper) {
-        TypeResolver.resolveRawArguments(Function.class, mapper.getClass());
         actions.add(mapper);
         return new TransmitterStreamBuilder<>(kafkaSource, actions);
     }

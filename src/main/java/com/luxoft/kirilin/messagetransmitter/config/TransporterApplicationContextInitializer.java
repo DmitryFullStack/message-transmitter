@@ -19,7 +19,7 @@ import java.lang.reflect.ParameterizedType;
 import java.util.Set;
 import java.util.StringJoiner;
 
-@ConditionalOnProperty(name = "transmitter.broker.consumer.bootstrap-servers")
+@ConditionalOnProperty(name = "transmitter.enabled", havingValue = "true")
 public class TransporterApplicationContextInitializer implements ApplicationContextInitializer {
 
 
@@ -45,7 +45,7 @@ public class TransporterApplicationContextInitializer implements ApplicationCont
                     ParameterizedType genericType = (ParameterizedType) declaredField.getGenericType();
                     Class<?> firstActualTypeArgument = (Class<?>) genericType.getActualTypeArguments()[0];
                     Class<?> secondActualTypeArgument = (Class<?>) genericType.getActualTypeArguments()[1];
-                    KafkaSource<?, ?> kafkaSource = new KafkaSource<>(kafkaSourceConfigHolder, mapper, firstActualTypeArgument, secondActualTypeArgument);
+                    KafkaSource<?, ?> kafkaSource = kafkaSourceConfigHolder.getEnabled() ? new KafkaSource<>(kafkaSourceConfigHolder, mapper, firstActualTypeArgument, secondActualTypeArgument) : new KafkaSource<>(false);
                     applicationContext.getBeanFactory().registerSingleton(declaredField.getName(), kafkaSource);
                 }
             }
