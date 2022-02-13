@@ -40,7 +40,7 @@ public class TransporterApplicationContextInitializer implements ApplicationCont
         for (Class<?> clazz : allClasses) {
             for (Field declaredField : clazz.getDeclaredFields()) {
                 declaredField.setAccessible(true);
-                if (declaredField.getType().isAssignableFrom(Transporter.class)) {
+                if (Transporter.class.isAssignableFrom(declaredField.getType()))  {
 //                    Class<?>[] classes = TypeResolver.resolveRawArguments(Transporter.class, declaredField.getType());
                     ParameterizedType genericType = (ParameterizedType) declaredField.getGenericType();
                     Class<?> firstActualTypeArgument = (Class<?>) genericType.getActualTypeArguments()[0];
