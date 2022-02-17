@@ -10,11 +10,11 @@ import java.util.function.Predicate;
 
 public class TransmitterStreamBuilder<T> {
 
-    private final KafkaSource kafkaSource;
+    private final KafkaTransporter kafkaSource;
     private final List<Object> actions;
 
 
-    public TransmitterStreamBuilder(KafkaSource kafkaSource, List<Object> actions) {
+    public TransmitterStreamBuilder(KafkaTransporter kafkaSource, List<Object> actions) {
         this.kafkaSource = kafkaSource;
         this.actions = actions;
     }
@@ -44,7 +44,7 @@ public class TransmitterStreamBuilder<T> {
         return new TransmitterStreamBuilder<>(kafkaSource, actions);
     }
 
-    public Transporter send(String ... topics) {
+    public Transporter sendTo(String ... topics) {
         return kafkaSource.to(actions, Arrays.asList(topics));
     }
 }

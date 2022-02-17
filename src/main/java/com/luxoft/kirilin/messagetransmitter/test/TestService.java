@@ -12,11 +12,13 @@ import java.util.UUID;
 public class TestService {
 
     @Autowired
-    private Transporter<Person, Unit> transporter;
+    private Transporter<Person, Unit> first;
+    @Autowired
+    private Transporter<Person, Unit> transmitter;
 
     @EventListener(ContextRefreshedEvent.class)
     public void work(ContextRefreshedEvent event){
-        transporter
+        first
                 .mappingExHandler(ex -> System.out.println("MAPPING!!!" + ex.getMessage()))
                 .deserializeExHandler(ex -> System.out.println("DESERIALIZED!!!" + ex.getMessage()))
                 .pipeline()
@@ -25,6 +27,12 @@ public class TestService {
                         person.getFirstName().toCharArray()[0], person.getAge()),
                         UUID.randomUUID()))
                 .forEachAndThen(System.out::println)
-                .send("test_deal");
+                .sendTo("test_deal");
+
+        first
+                .pipeline()
+                .filter(person -> person.getAge() > 18)
+                .forEachAndThen(System.out::println)
+                .sendTo("test_deal");
     }
 }

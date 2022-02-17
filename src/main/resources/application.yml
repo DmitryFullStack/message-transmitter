@@ -17,7 +17,7 @@ transmitter:
         bootstrap-servers: localhost:9092
         ssl:
           protocol: PLAINTEXT
-        group-id: test-group
+        group-id: test-first
       producer:
         bootstrap-servers: stalpp-kfc001lk.corp.dev.vtb:9092
         ssl:

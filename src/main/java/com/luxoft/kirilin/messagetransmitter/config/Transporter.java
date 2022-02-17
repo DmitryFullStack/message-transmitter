@@ -11,8 +11,6 @@ public interface Transporter<T, V> {
 
     void forEach(Consumer cons, List<Object> actions);
 
-    Transporter<T, V> to(List<Object> actions, List<String> topics);
-
     Transporter<T, V> deserializeExHandler(Consumer<DeserializationException> handler);
 
     Transporter<T, V> mappingExHandler(Consumer<JsonMappingException> handler);

@@ -34,20 +34,20 @@ public class TransmitterBeanPostProcessor implements BeanPostProcessor {
                 Optional<TransmitterDescriptor> transmitterDescriptor = kafkaSourceConfigHolder.getRoutes().stream().filter(desc -> desc.getName().equals(declaredField.getName()))
                         .findFirst();
                 if(transmitterDescriptor.isPresent()){
-                    KafkaSource<?, ?> kafkaSource = kafkaSourceConfigHolder.getEnabled()
-                            ? new KafkaSource<>(transmitterDescriptor.get().getConsumer().buildProperties(),
+                    KafkaTransporter<?, ?> kafkaSource = kafkaSourceConfigHolder.getEnabled()
+                            ? new KafkaTransporter<>(transmitterDescriptor.get().getName(), transmitterDescriptor.get().getConsumer().buildProperties(),
                             transmitterDescriptor.get().getProducer().buildProperties(),
                             transmitterDescriptor.get().getSourceTopic(),
                             mapper, firstActualTypeArgument, secondActualTypeArgument)
-                            : new KafkaSource<>(false);
+                            : new KafkaTransporter<>(false);
                     declaredField.set(bean, kafkaSource);
                 }else {
-                    KafkaSource<?, ?> kafkaSource = kafkaSourceConfigHolder.getEnabled()
-                            ? new KafkaSource<>(kafkaSourceConfigHolder.getBroker().buildConsumerProperties(),
+                    KafkaTransporter<?, ?> kafkaSource = kafkaSourceConfigHolder.getEnabled()
+                            ? new KafkaTransporter<>(declaredField.getName(), kafkaSourceConfigHolder.getBroker().buildConsumerProperties(),
                             kafkaSourceConfigHolder.getBroker().buildProducerProperties(),
                             kafkaSourceConfigHolder.getSourceTopic(), mapper,
                             firstActualTypeArgument, secondActualTypeArgument)
-                            : new KafkaSource<>(false);
+                            : new KafkaTransporter<>(false);
                     declaredField.set(bean, kafkaSource);
                 }
             }

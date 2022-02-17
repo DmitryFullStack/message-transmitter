@@ -35,20 +35,22 @@ public class TransporterApplicationContextInitializer implements ApplicationCont
                     Optional<TransmitterDescriptor> transmitterDescriptor = kafkaSourceConfigHolder.getRoutes().stream().filter(desc -> desc.getName().equals(declaredField.getName()))
                             .findFirst();
                     if(transmitterDescriptor.isPresent()){
-                        KafkaSource<?, ?> kafkaSource = kafkaSourceConfigHolder.getEnabled()
-                                ? createNewKafkaSource(mapper, transmitterDescriptor.get().getConsumer(),
+                        KafkaTransporter<?, ?> kafkaSource = kafkaSourceConfigHolder.getEnabled()
+                                ? createNewKafkaSource(transmitterDescriptor.get().getName(),
+                                                        mapper, transmitterDescriptor.get().getConsumer(),
                                                         transmitterDescriptor.get().getProducer(),
                                                         transmitterDescriptor.get().getSourceTopic(),
                                                         genericTypes[0], genericTypes[1])
-                                : new KafkaSource<>(false);
+                                : new KafkaTransporter<>(false);
                         applicationContext.getBeanFactory().registerSingleton(declaredField.getName(), kafkaSource);
                     }else {
-                        KafkaSource<?, ?> kafkaSource = kafkaSourceConfigHolder.getEnabled()
-                                ? createNewKafkaSource(mapper, kafkaSourceConfigHolder.getBroker().getConsumer(),
+                        KafkaTransporter<?, ?> kafkaSource = kafkaSourceConfigHolder.getEnabled()
+                                ? createNewKafkaSource(declaredField.getName(),
+                                                        mapper, kafkaSourceConfigHolder.getBroker().getConsumer(),
                                                         kafkaSourceConfigHolder.getBroker().getProducer(),
                                                         kafkaSourceConfigHolder.getSourceTopic(),
                                                         genericTypes[0], genericTypes[1])
-                                : new KafkaSource<>(false);
+                                : new KafkaTransporter<>(false);
                         applicationContext.getBeanFactory().registerSingleton(declaredField.getName(), kafkaSource);
                     }
                 }
@@ -74,10 +76,10 @@ public class TransporterApplicationContextInitializer implements ApplicationCont
         return scanner.getSubTypesOf(Object.class);
     }
 
-    private KafkaSource<?, ?> createNewKafkaSource(ObjectMapper mapper, KafkaProperties.Consumer consumer,
-                                                   KafkaProperties.Producer producer, List<String> sourceTopic,
-                                                   Class<?> firstActualTypeArgument, Class<?> secondActualTypeArgument) {
-        return new KafkaSource<>(consumer.buildProperties(), producer.buildProperties(),
+    private KafkaTransporter<?, ?> createNewKafkaSource(String name, ObjectMapper mapper, KafkaProperties.Consumer consumer,
+                                                        KafkaProperties.Producer producer, List<String> sourceTopic,
+                                                        Class<?> firstActualTypeArgument, Class<?> secondActualTypeArgument) {
+        return new KafkaTransporter<>(name, consumer.buildProperties(), producer.buildProperties(),
                 sourceTopic, mapper, firstActualTypeArgument, secondActualTypeArgument);
     }
 
