@@ -12,7 +12,19 @@ transmitter:
       ssl:
         protocol: PLAINTEXT
   routes:
-    - source-topic: test
+    - sourceTopic: test
+      consumer:
+        bootstrap-servers: localhost:9092
+        ssl:
+          protocol: PLAINTEXT
+        group-id: test-group
+      producer:
+        bootstrap-servers: stalpp-kfc001lk.corp.dev.vtb:9092
+        ssl:
+          protocol: PLAINTEXT
+      name: first
+    - name: second
+      sourceTopic: test_new
       consumer:
         bootstrap-servers: localhost:9092
         ssl:

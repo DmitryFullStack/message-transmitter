@@ -18,9 +18,9 @@ public class TransmitterDescriptor {
     private List<String> sourceTopic = Collections.emptyList();
 
     @NestedConfigurationProperty
-    private final KafkaProperties.Consumer consumer = new KafkaProperties.Consumer();
+    private KafkaProperties.Consumer consumer = new KafkaProperties.Consumer();
 
     @NestedConfigurationProperty
-    private final KafkaProperties.Producer producer = new KafkaProperties.Producer();
+    private KafkaProperties.Producer producer = new KafkaProperties.Producer();
 
 }

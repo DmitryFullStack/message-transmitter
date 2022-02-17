@@ -16,7 +16,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class KafkaSourceConfigHolder {
+public class TransmitterConfigHolder {
 
     private Boolean enabled = false;
 

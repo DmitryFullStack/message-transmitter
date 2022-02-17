@@ -1,8 +1,8 @@
 package com.luxoft.kirilin.messagetransmitter.config;
 
-import net.jodah.typetools.TypeResolver;
-
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;

@@ -2,7 +2,6 @@ package com.luxoft.kirilin.messagetransmitter.config;
 
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -14,10 +13,7 @@ import org.springframework.kafka.support.serializer.DeserializationException;
 import org.springframework.lang.Nullable;
 
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -36,7 +32,9 @@ public class KafkaSource<T, V> implements Transporter<T, V> {
     public static final String VALUE_DESERIALIZER = "value.deserializer";
 
     private final AtomicBoolean closed;
-    private KafkaSourceConfigHolder sourceConfigHolder;
+    private Map<String, Object> consumerProps;
+    private Map<String, Object> producerProps;
+    private List<String> sourceTopics;
     private ObjectMapper objectMapper;
     private KafkaConsumer<String, String> kafkaConsumer;
     private KafkaProducer<?, V> kafkaProducer;
@@ -45,20 +43,23 @@ public class KafkaSource<T, V> implements Transporter<T, V> {
     private Consumer<DeserializationException> deserializationExceptionHandler;
     private Consumer<JsonMappingException> jsonMappingExceptionHandler;
 
-    public KafkaSource(KafkaSourceConfigHolder sourceConfigHolder, ObjectMapper objectMapper,
+    public KafkaSource(Map<String, Object> consumerProps, Map<String, Object> producerProps,
+                       List<String> sourceTopics, ObjectMapper objectMapper,
                        Class<T> sourceClass, Class<? super V> targetClass) {
+        this.consumerProps = consumerProps;
+        this.producerProps = producerProps;
+        this.sourceTopics = sourceTopics;
         this.closed = new AtomicBoolean(false);
-        this.sourceConfigHolder = sourceConfigHolder;
         this.sourceClass = sourceClass;
         this.objectMapper = objectMapper;
         this.kafkaProducer = KafkaProducerFactory.getProducer(targetClass,
-                this.sourceConfigHolder.getBroker().buildProducerProperties(),
+                producerProps,
                 this.objectMapper);
         this.kafkaConsumer = KafkaConsumerFactory.getConsumer(
-                this.sourceConfigHolder.getBroker().buildConsumerProperties(),
-                sourceConfigHolder.getSourceTopic());
-        this.sourceDeserializerClass = !Objects.equals(sourceConfigHolder.getBroker().buildConsumerProperties().get(VALUE_DESERIALIZER), StringDeserializer.class)
-                ? (Class<?>) sourceConfigHolder.getBroker().buildConsumerProperties().get(VALUE_DESERIALIZER) : null;
+                consumerProps,
+                sourceTopics);
+        this.sourceDeserializerClass = !Objects.equals(consumerProps.get(VALUE_DESERIALIZER), StringDeserializer.class)
+                ? (Class<?>) consumerProps.get(VALUE_DESERIALIZER) : null;
     }
 
     public KafkaSource(Boolean enabled) {
