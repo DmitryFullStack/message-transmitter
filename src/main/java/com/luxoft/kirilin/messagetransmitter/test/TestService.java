@@ -12,9 +12,9 @@ import java.util.UUID;
 public class TestService {
 
     @Autowired
-    private Transporter<Person, Unit> first;
-    @Autowired
-    private Transporter<Person, Unit> transmitter;
+    private Transporter<Person> first;
+//    @Autowired
+//    private Transporter<Unit> transmitter;
 
     @EventListener(ContextRefreshedEvent.class)
     public void work(ContextRefreshedEvent event){
@@ -27,12 +27,13 @@ public class TestService {
                         person.getFirstName().toCharArray()[0], person.getAge()),
                         UUID.randomUUID()))
                 .forEachAndThen(System.out::println)
-                .sendTo("test_deal");
+                .deliveryGuarantee()
+                .sendTo("test_loan");
 
         first
                 .pipeline()
                 .filter(person -> person.getAge() > 18)
                 .forEachAndThen(System.out::println)
-                .sendTo("test_deal");
+                .sendTo("test_loan");
     }
 }

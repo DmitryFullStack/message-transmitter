@@ -7,8 +7,8 @@ import java.util.Map;
 
 public class KafkaConsumerFactory {
 
-    public static <V> KafkaConsumer getConsumer(Map<String, Object> props, List<String> topics) {
-        KafkaConsumer<?, V> kafkaConsumer;
+    public static <V> KafkaConsumer<String, V> getConsumer(Map<String, Object> props, List<String> topics) {
+        KafkaConsumer<String, V> kafkaConsumer;
         kafkaConsumer = new KafkaConsumer<>(props);
         kafkaConsumer.subscribe(topics);
         return kafkaConsumer;

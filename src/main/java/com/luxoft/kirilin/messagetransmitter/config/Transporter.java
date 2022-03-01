@@ -6,12 +6,12 @@ import org.springframework.kafka.support.serializer.DeserializationException;
 import java.util.List;
 import java.util.function.Consumer;
 
-public interface Transporter<T, V> {
+public interface Transporter<T> {
     TransmitterStreamBuilder<T> pipeline();
 
     void forEach(Consumer cons, List<Object> actions);
 
-    Transporter<T, V> deserializeExHandler(Consumer<DeserializationException> handler);
+    Transporter<T> deserializeExHandler(Consumer<DeserializationException> handler);
 
-    Transporter<T, V> mappingExHandler(Consumer<JsonMappingException> handler);
+    Transporter<T> mappingExHandler(Consumer<JsonMappingException> handler);
 }

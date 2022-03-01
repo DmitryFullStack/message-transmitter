@@ -30,23 +30,22 @@ public class TransmitterBeanPostProcessor implements BeanPostProcessor {
             if (Transporter.class.isAssignableFrom(declaredField.getType())) {
                 ParameterizedType genericType = (ParameterizedType) declaredField.getGenericType();
                 Class<?> firstActualTypeArgument = (Class<?>) genericType.getActualTypeArguments()[0];
-                Class<?> secondActualTypeArgument = (Class<?>) genericType.getActualTypeArguments()[1];
                 Optional<TransmitterDescriptor> transmitterDescriptor = kafkaSourceConfigHolder.getRoutes().stream().filter(desc -> desc.getName().equals(declaredField.getName()))
                         .findFirst();
                 if(transmitterDescriptor.isPresent()){
-                    KafkaTransporter<?, ?> kafkaSource = kafkaSourceConfigHolder.getEnabled()
+                    KafkaTransporter<?> kafkaSource = kafkaSourceConfigHolder.getEnabled()
                             ? new KafkaTransporter<>(transmitterDescriptor.get().getName(), transmitterDescriptor.get().getConsumer().buildProperties(),
                             transmitterDescriptor.get().getProducer().buildProperties(),
                             transmitterDescriptor.get().getSourceTopic(),
-                            mapper, firstActualTypeArgument, secondActualTypeArgument)
+                            mapper, firstActualTypeArgument, context)
                             : new KafkaTransporter<>(false);
                     declaredField.set(bean, kafkaSource);
                 }else {
-                    KafkaTransporter<?, ?> kafkaSource = kafkaSourceConfigHolder.getEnabled()
+                    KafkaTransporter<?> kafkaSource = kafkaSourceConfigHolder.getEnabled()
                             ? new KafkaTransporter<>(declaredField.getName(), kafkaSourceConfigHolder.getBroker().buildConsumerProperties(),
                             kafkaSourceConfigHolder.getBroker().buildProducerProperties(),
                             kafkaSourceConfigHolder.getSourceTopic(), mapper,
-                            firstActualTypeArgument, secondActualTypeArgument)
+                            firstActualTypeArgument, context)
                             : new KafkaTransporter<>(false);
                     declaredField.set(bean, kafkaSource);
                 }

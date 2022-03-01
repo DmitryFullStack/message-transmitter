@@ -10,16 +10,9 @@ import java.util.Map;
 
 public class KafkaProducerFactory {
 
-    public static <T> KafkaProducer getProducer(Class<T> valueClass, Map<String, Object> props,
+    public static <T> KafkaProducer<String, T> getProducer(Map<String, Object> props,
                                                 ObjectMapper objectMapper) {
-        Serializer valueSerializer;
-        if (valueClass.isAssignableFrom(String.class)) {
-            valueSerializer = new StringSerializer();
-        } else {
-            valueSerializer = new JsonSerializer<T>(objectMapper);
-        }
-        KafkaProducer<String, T> kafkaProducer = new KafkaProducer<String, T>(props,
-                new JsonSerializer<>(objectMapper), valueSerializer);
-        return kafkaProducer;
+        return new KafkaProducer<>(props,
+                new JsonSerializer<>(objectMapper), new JsonSerializer<T>(objectMapper));
     }
 }

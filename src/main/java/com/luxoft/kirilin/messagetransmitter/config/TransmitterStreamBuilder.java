@@ -1,5 +1,7 @@
 package com.luxoft.kirilin.messagetransmitter.config;
 
+import net.jodah.typetools.TypeResolver;
+
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -12,11 +14,16 @@ public class TransmitterStreamBuilder<T> {
 
     private final KafkaTransporter kafkaSource;
     private final List<Object> actions;
+    private final Class<T> token;
+    private boolean deliveryGuarantee;
 
 
-    public TransmitterStreamBuilder(KafkaTransporter kafkaSource, List<Object> actions) {
+    public TransmitterStreamBuilder(KafkaTransporter kafkaSource, List<Object> actions,
+                                    Class<T> token, boolean deliveryGuarantee) {
         this.kafkaSource = kafkaSource;
         this.actions = actions;
+        this.token = token;
+        this.deliveryGuarantee = deliveryGuarantee;
     }
 
     public void forEach(Consumer<T> cons) {
@@ -26,25 +33,33 @@ public class TransmitterStreamBuilder<T> {
 
     public <U> TransmitterStreamBuilder<U> map(Function<T, U> mapper) {
         actions.add(mapper);
-        return new TransmitterStreamBuilder<>(kafkaSource, actions);
+        Class<U> aClass = (Class<U>) TypeResolver.resolveRawArguments(Function.class, mapper.getClass())[1];
+        return new TransmitterStreamBuilder<>(kafkaSource, actions, aClass, deliveryGuarantee);
     }
 
         public <U> TransmitterStreamBuilder<U> flatMap(Function<? super T, ? extends Collection<? extends U>> mapper) {
         actions.add(mapper);
-        return new TransmitterStreamBuilder<>(kafkaSource, actions);
+        Class<U> aClass = (Class<U>) TypeResolver.resolveRawArguments(Function.class, mapper.getClass())[1];
+        return new TransmitterStreamBuilder<>(kafkaSource, actions, aClass, deliveryGuarantee);
     }
 
     public TransmitterStreamBuilder<T> forEachAndThen(Consumer<T> consumer) {
         actions.add(consumer);
-        return new TransmitterStreamBuilder<>(kafkaSource, actions);
+        return new TransmitterStreamBuilder<>(kafkaSource, actions, token, deliveryGuarantee);
     }
 
     public TransmitterStreamBuilder<T> filter(Predicate<T> pred) {
         actions.add(pred);
-        return new TransmitterStreamBuilder<>(kafkaSource, actions);
+        return new TransmitterStreamBuilder<>(kafkaSource, actions, token, deliveryGuarantee);
     }
 
-    public Transporter sendTo(String ... topics) {
-        return kafkaSource.to(actions, Arrays.asList(topics));
+    public TransmitterStreamBuilder<T> deliveryGuarantee() {
+        deliveryGuarantee = true;
+        return this;
+    }
+
+    public  Transporter sendTo(String ... topics) {
+        if(deliveryGuarantee) kafkaSource.enableOutbox(token);
+        return kafkaSource.to(actions, Arrays.asList(topics), deliveryGuarantee);
     }
 }
