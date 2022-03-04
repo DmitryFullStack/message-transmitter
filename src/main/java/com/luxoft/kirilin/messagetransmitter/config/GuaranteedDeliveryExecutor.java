@@ -29,7 +29,7 @@ public class GuaranteedDeliveryExecutor {
                 log.error("Error flushing transaction outbox. Pausing", e);
             }
             try {
-                // When we run out of work, pause for a minute before checking again
+                // When we run out of work, pause for 30 seconds before checking again
                 Thread.sleep(30_000);
             } catch (InterruptedException e) {
                 break;

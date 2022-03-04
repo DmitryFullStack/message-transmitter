@@ -21,6 +21,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.StringJoiner;
 
+import static java.util.Objects.nonNull;
+
 @ConditionalOnProperty(name = "transmitter.enabled", havingValue = "true")
 public class TransporterApplicationContextInitializer implements ApplicationContextInitializer {
 
@@ -33,7 +35,9 @@ public class TransporterApplicationContextInitializer implements ApplicationCont
             for (Field declaredField : clazz.getDeclaredFields()) {
                 if (Transporter.class.isAssignableFrom(declaredField.getType()) && !declaredField.getGenericType().equals(declaredField.getType()))  {
                     Class<?>[] genericTypes = getGenericTypes(declaredField);
-                    Optional<TransmitterDescriptor> transmitterDescriptor = kafkaSourceConfigHolder.getRoutes().stream().filter(desc -> desc.getName().equals(declaredField.getName()))
+                    Optional<TransmitterDescriptor> transmitterDescriptor = kafkaSourceConfigHolder.getRoutes().stream()
+                            .filter(desc -> nonNull(desc.getName()))
+                            .filter(desc -> desc.getName().equals(declaredField.getName()))
                             .findFirst();
                     if(transmitterDescriptor.isPresent()){
                         KafkaTransporter<?> kafkaSource = kafkaSourceConfigHolder.getEnabled()
