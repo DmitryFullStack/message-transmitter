@@ -3,6 +3,8 @@ package com.luxoft.kirilin.messagetransmitter.config;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gruelbox.transactionoutbox.*;
+import com.luxoft.kirilin.messagetransmitter.config.troutbox.DefaultPersisterDecorator;
+import com.luxoft.kirilin.messagetransmitter.config.troutbox.GuaranteedDeliveryExecutor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -76,9 +78,9 @@ public class KafkaTransporter<T> implements Transporter<T>, ApplicationListener<
     }
 
     @Override
-    public TransmitterStreamBuilder<T> pipeline() {
+    public TransmitterRecipeBuilder<T> pipeline() {
         this.used = true;
-        return new TransmitterStreamBuilder<>(this, new ArrayList<>(), sourceClass, false);
+        return new TransmitterRecipeBuilder<>(this, new ArrayList<>(), sourceClass, false);
     }
 
     @Override

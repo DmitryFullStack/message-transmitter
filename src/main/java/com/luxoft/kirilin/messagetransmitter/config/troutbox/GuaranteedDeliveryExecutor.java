@@ -1,4 +1,4 @@
-package com.luxoft.kirilin.messagetransmitter.config;
+package com.luxoft.kirilin.messagetransmitter.config.troutbox;
 
 import com.gruelbox.transactionoutbox.TransactionOutbox;
 import lombok.extern.slf4j.Slf4j;
@@ -11,11 +11,11 @@ public class GuaranteedDeliveryExecutor {
 
     private List<TransactionOutbox> outboxes = new ArrayList<>();
 
-    void addOutbox(TransactionOutbox outbox){
+    public void addOutbox(TransactionOutbox outbox){
         outboxes.add(outbox);
     }
 
-    Thread backgroundThread = new Thread(() -> {
+    public Thread backgroundThread = new Thread(() -> {
         log.info("Start listening transactional outbox tables...");
         while (!Thread.interrupted()) {
             try {

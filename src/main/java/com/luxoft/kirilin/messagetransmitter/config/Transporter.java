@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.function.Consumer;
 
 public interface Transporter<T> {
-    TransmitterStreamBuilder<T> pipeline();
+    TransmitterRecipeBuilder<T> pipeline();
 
     void forEach(Consumer cons, List<Object> actions);
 

@@ -10,7 +10,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 
 
-public class TransmitterStreamBuilder<T> {
+public class TransmitterRecipeBuilder<T> {
 
     private final KafkaTransporter kafkaSource;
     private final List<Object> actions;
@@ -18,7 +18,7 @@ public class TransmitterStreamBuilder<T> {
     private boolean deliveryGuarantee;
 
 
-    public TransmitterStreamBuilder(KafkaTransporter kafkaSource, List<Object> actions,
+    public TransmitterRecipeBuilder(KafkaTransporter kafkaSource, List<Object> actions,
                                     Class<T> token, boolean deliveryGuarantee) {
         this.kafkaSource = kafkaSource;
         this.actions = actions;
@@ -31,29 +31,29 @@ public class TransmitterStreamBuilder<T> {
     }
 
 
-    public <U> TransmitterStreamBuilder<U> map(Function<T, U> mapper) {
+    public <U> TransmitterRecipeBuilder<U> map(Function<T, U> mapper) {
         actions.add(mapper);
         Class<U> aClass = (Class<U>) TypeResolver.resolveRawArguments(Function.class, mapper.getClass())[1];
-        return new TransmitterStreamBuilder<>(kafkaSource, actions, aClass, deliveryGuarantee);
+        return new TransmitterRecipeBuilder<>(kafkaSource, actions, aClass, deliveryGuarantee);
     }
 
-        public <U> TransmitterStreamBuilder<U> flatMap(Function<? super T, ? extends Collection<? extends U>> mapper) {
+        public <U> TransmitterRecipeBuilder<U> flatMap(Function<? super T, ? extends Collection<? extends U>> mapper) {
         actions.add(mapper);
         Class<U> aClass = (Class<U>) TypeResolver.resolveRawArguments(Function.class, mapper.getClass())[1];
-        return new TransmitterStreamBuilder<>(kafkaSource, actions, aClass, deliveryGuarantee);
+        return new TransmitterRecipeBuilder<>(kafkaSource, actions, aClass, deliveryGuarantee);
     }
 
-    public TransmitterStreamBuilder<T> forEachAndThen(Consumer<T> consumer) {
+    public TransmitterRecipeBuilder<T> forEachAndThen(Consumer<T> consumer) {
         actions.add(consumer);
-        return new TransmitterStreamBuilder<>(kafkaSource, actions, token, deliveryGuarantee);
+        return new TransmitterRecipeBuilder<>(kafkaSource, actions, token, deliveryGuarantee);
     }
 
-    public TransmitterStreamBuilder<T> filter(Predicate<T> pred) {
+    public TransmitterRecipeBuilder<T> filter(Predicate<T> pred) {
         actions.add(pred);
-        return new TransmitterStreamBuilder<>(kafkaSource, actions, token, deliveryGuarantee);
+        return new TransmitterRecipeBuilder<>(kafkaSource, actions, token, deliveryGuarantee);
     }
 
-    public TransmitterStreamBuilder<T> deliveryGuarantee() {
+    public TransmitterRecipeBuilder<T> deliveryGuarantee() {
         deliveryGuarantee = true;
         return this;
     }

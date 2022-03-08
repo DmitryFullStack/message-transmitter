@@ -1,4 +1,4 @@
-package com.luxoft.kirilin.messagetransmitter.config;
+package com.luxoft.kirilin.messagetransmitter.config.troutbox;
 
 import com.gruelbox.transactionoutbox.*;
 import lombok.SneakyThrows;
@@ -20,8 +20,7 @@ public class DefaultPersisterDecorator implements Persistor{
 
     @Override
     public void migrate(TransactionManager transactionManager){
-        ExtendedMigrationManager.getManager(this.tableName)
-                .migrate(transactionManager, Dialect.POSTGRESQL_9);
+        ExtendedMigrationManager.migrate(transactionManager, tableName);
     }
 
 
