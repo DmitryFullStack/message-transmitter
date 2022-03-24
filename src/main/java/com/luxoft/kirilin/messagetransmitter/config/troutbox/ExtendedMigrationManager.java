@@ -9,16 +9,12 @@ import java.sql.PreparedStatement;
 public class ExtendedMigrationManager {
     private static final String OUTBOX_TABLE_PREPARED_STATEMENT = "create table if not exists %s " +
             "(id varchar(36) not null primary key,"
-            + "invocation      text,"
-            + "nextattempttime timestamp(6),"
-            + "attempts        integer,"
-            + "blocked         boolean,"
-            + "version         integer,"
-            + "uniquerequestid varchar(250) unique,"
-            + "processed       boolean,"
-            + "lastattempttime timestamp(6));";
+            + "payload         text,"
+            + "approved        boolean,"
+            + "partition        integer,"
+            + "create_time timestamp(6));";
     private static final String OUTBOX_TABLE_INDEX_PREPARED_STATEMENT = "create index if not exists %s " +
-            "on %s (processed, blocked, nextattempttime);";
+            "on %s (partition, create_time);";
 
     static void migrate(TransactionManager transactionManager, @NotNull String tableName) {
         transactionManager.inTransaction(
