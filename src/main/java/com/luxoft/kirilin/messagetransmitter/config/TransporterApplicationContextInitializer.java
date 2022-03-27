@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.luxoft.kirilin.messagetransmitter.config.troutbox.GuaranteedDeliveryExecutor;
+import com.luxoft.kirilin.messagetransmitter.config.troutbox.GuaranteedDeliveryExecutorService;
 import org.reflections.Reflections;
 import org.reflections.scanners.SubTypesScanner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -63,7 +63,7 @@ public class TransporterApplicationContextInitializer implements ApplicationCont
             }
         }
         applicationContext.getBeanFactory()
-                .registerSingleton(Introspector.decapitalize(GuaranteedDeliveryExecutor.class.getName()), new GuaranteedDeliveryExecutor() );
+                .registerSingleton(Introspector.decapitalize(GuaranteedDeliveryExecutorService.class.getName()), new GuaranteedDeliveryExecutorService() );
     }
 
     private Class<?>[] getGenericTypes(Field declaredField){
