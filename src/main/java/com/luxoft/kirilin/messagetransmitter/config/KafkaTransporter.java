@@ -2,9 +2,7 @@ package com.luxoft.kirilin.messagetransmitter.config;
 
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.gruelbox.transactionoutbox.*;
-import com.luxoft.kirilin.messagetransmitter.config.troutbox.DefaultPersisterDecorator;
-import com.luxoft.kirilin.messagetransmitter.config.troutbox.GuaranteedDeliveryExecutor;
+import com.luxoft.kirilin.messagetransmitter.config.troutbox.GuaranteedDeliveryExecutorService;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -13,14 +11,11 @@ import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.errors.WakeupException;
 import org.apache.kafka.common.serialization.StringDeserializer;
-import org.slf4j.event.Level;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.kafka.support.serializer.DeserializationException;
 import org.springframework.lang.Nullable;
-import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.Duration;
 import java.util.*;
@@ -54,9 +49,9 @@ public class KafkaTransporter<T> implements Transporter<T>, ApplicationListener<
     private Consumer<JsonMappingException> jsonMappingExceptionHandler;
     private List<Consumer> actions = new ArrayList<>();
     private List<String> sourceTopics;
+    private List<String> targetTopics;
+    private GuaranteedDeliveryExecutorService guaranteedDeliveryService;
     private ConfigurableApplicationContext context;
-    private TransactionOutbox transactionOutbox;
-    private TransactionTemplate transactionTemplate;
 
     public KafkaTransporter(String name, Map<String, Object> consumerProps, Map<String, Object> producerProps,
                             List<String> sourceTopics, ObjectMapper objectMapper,
@@ -94,16 +89,16 @@ public class KafkaTransporter<T> implements Transporter<T>, ApplicationListener<
 
     void enableOutbox(Class<?> serialized){
         deliveryGuarantee = true;
+        GuaranteedDeliveryExecutorService guaranteedDeliveryService = context.getBean(GuaranteedDeliveryExecutorService.class);
+        guaranteedDeliveryService.setObjectMapper(objectMapper);
+        this.guaranteedDeliveryService = guaranteedDeliveryService;
         serializingClasses.add(serialized);
     }
 
     Transporter<T> to(List<Object> conveyorActions, List<String> topics, boolean deliveryGuarantee) {
-//        targetTopics = topics;
+        targetTopics = topics;
         Consumer sender = deliveryGuarantee
-                ? record -> {
-                this.transactionTemplate.executeWithoutResult(transactionStatus -> {
-                    this.transactionOutbox.schedule(this.getClass()).sending(record, topics.toArray(String[]::new));
-                });}
+                ? record -> guaranteedDeliveryService.addForGuaranteedDelivery(record, name)
                 : record -> sending(record, topics.toArray(String[]::new));
 
         Consumer pipelineConsumer = record -> {
@@ -238,48 +233,18 @@ public class KafkaTransporter<T> implements Transporter<T>, ApplicationListener<
     }
 
     public void txnoInitialize() {
-        this.transactionTemplate = new TransactionTemplate(this.context.getBean(PlatformTransactionManager.class));
-        this.serializingClasses.add(UUID.class);
-        this.serializingClasses.add(Object.class);
-        this.transactionOutbox = TransactionOutbox.builder()
-                .instantiator(this.context.getBean(SpringInstantiator.class))
-                .transactionManager(this.context.getBean(SpringTransactionManager.class))
-                .persistor(new DefaultPersisterDecorator(DefaultPersistor.builder()
-                        // Selecting the right SQL dialect ensures that features such as SKIP LOCKED are used correctly.
-                        .dialect(Dialect.POSTGRESQL_9)
-                        // Override the table name (defaults to "TXNO_OUTBOX")
-                        .tableName(name + "_TXNO_OUTBOX")
-                        // Shorten the time we will wait for write locks (defaults to 2)
-                        .writeLockTimeoutSeconds(2)
-                        // Disable automatic creation and migration of the outbox table, forcing the application to manage
-                        // migrations itself
-                        .migrate(true)
-                        // Allow the SaleType enum and Money class to be used in arguments (see example below)
-                        .serializer(DefaultInvocationSerializer.builder()
-                                .serializableTypes(serializingClasses)
-                                .build())
-                        .build(), name + "_TXNO_OUTBOX"))
-                .logLevelTemporaryFailure(Level.INFO)
-                // 10 attempts at a task before blocking it.
-                .blockAfterAttempts(100)
-                // When calling flush(), select 0.5m records at a time.
-                .flushBatchSize(500_000)
-                // Flush once every 15 minutes only
-                .attemptFrequency(Duration.ofSeconds(30))
-                // Include Slf4j's Mapped Diagnostic Context in tasks. This means that anything in the MDC when schedule()
-                // is called will be recreated in the task when it runs. Very useful for tracking things like user ids and
-                // request ids across invocations.
-                .serializeMdc(true)
-                // Sets how long we should keep records of requests with a unique request id so duplicate requests
-                // can be rejected. Defaults to 7 days.
-                .retentionThreshold(Duration.ofDays(10000))
-                .build();
-        this.transactionOutbox.initialize();
-        GuaranteedDeliveryExecutor executor = this.context.getBean(GuaranteedDeliveryExecutor.class);
-        executor.addOutbox(transactionOutbox);
-        if(!executor.backgroundThread.isAlive()){
-            executor.backgroundThread.start();
-        }
+        GuaranteedDeliveryExecutorService executor = this.context.getBean(GuaranteedDeliveryExecutorService.class);
+        executor.addOutbox(context, name,
+                record -> {
+                    for (String topicName : this.targetTopics) {
+                        try {
+                            kafkaProducer.send(new ProducerRecord(topicName, record))
+                                    .get(5, TimeUnit.SECONDS);
+                        }catch (ExecutionException | InterruptedException | TimeoutException exception){
+                            throw new RuntimeException(exception);
+                        }
+                    }
+                });
     }
 
 }
